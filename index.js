@@ -6,7 +6,7 @@ const functions = require('firebase-functions');
 const {WebhookClient} = require('dialogflow-fulfillment');
 const {Card, Suggestion} = require('dialogflow-fulfillment');
 const cheerio = require('cheerio');
-const request = require('request');
+const request = require('request-promise-native');
 
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
 
@@ -28,14 +28,13 @@ function sameDay(d1, d2) {
 
 const ARIZMENDI_MENU_URL = "http://arizmendi-valencia.squarespace.com/pizza/?format=json-pretty";
 function getPizzas(callback) {
-  request({
+  return request({
     url: ARIZMENDI_MENU_URL,
     json: true,
     headers: {
       'user-agent': "WebKit/Blink"
     }
-  }, function(err, res, body) {
-    if (err) { callback([]); }
+  }).then(function(body) {
     let $ = cheerio.load(body.mainContent);
     let titleDiv = findElementByText($('div'), "THIS WEEK'S PIZZA");
     let pizzasDiv = titleDiv.next().next();
@@ -52,7 +51,7 @@ function getPizzas(callback) {
       }
       el = el.next();
     }
-    callback(pizzas);
+    return pizzas;
   });
 }
 
@@ -62,19 +61,25 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
 
   function pizzaSchedule(agent) {
-    getPizzas(function(pizzaSchedule) {
+    return getPizzas().then(function(pizzaSchedule) {
       if (pizzaSchedule.length === 0) {
-        agent.add("It looks their aren't any pizzas available. Or something went wrong.");
+        console.log("no pizzas found");
+        agent.add("It looks their aren't any pizzas available.");
         return;
       }
       let dateOfInterest = new Date(agent.parameters.date);
       for (let i = 0; i < pizzaSchedule.length; i++) {
         if (sameDay(pizzaSchedule.date == dateOfInterest)) {
           agent.add("The pizza on " + dateOfInterest.toDateString() + " will have " + pizzaSchedule.toppings);
+          console.log("found a pizza");
           return;
         }
       }
+      console.log("no pizza on that day");
       agent.add("I couldn't find a pizza for that date");
+    }).catch(function(err) {
+      console.log(err);
+      agent.add('Something went wrong!');
     });
   }
 
