@@ -1,0 +1,8 @@
+{
+    "version": 2,
+    "name": "Arizmendi Pizza Schedule",
+    "builds": [
+        { "src": "*.js", "use": "@now/node" }
+    ],
+    "alias": "arizmendi-pizza.lundy.xyz"
+}

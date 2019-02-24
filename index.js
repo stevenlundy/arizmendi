@@ -5,20 +5,9 @@
 const functions = require('firebase-functions');
 const {WebhookClient} = require('dialogflow-fulfillment');
 const {Card, Suggestion} = require('dialogflow-fulfillment');
-const cheerio = require('cheerio');
 const request = require('request-promise-native');
 
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
-
-function findElementByText(elements, searchText) {
-  let el = elements;
-  for (let i = 0; i < elements.length; i++) {
-    if (el.first().text() === searchText) {
-      return el;
-    }
-    el = el.next();
-  }
-}
 
 function sameDay(d1, d2) {
   return d1.getFullYear() === d2.getFullYear() &&
@@ -26,33 +15,9 @@ function sameDay(d1, d2) {
     d1.getDate() === d2.getDate();
 }
 
-const ARIZMENDI_MENU_URL = "http://arizmendi-valencia.squarespace.com/pizza/?format=json-pretty";
-function getPizzas(callback) {
-  return request({
-    url: ARIZMENDI_MENU_URL,
-    json: true,
-    headers: {
-      'user-agent': "WebKit/Blink"
-    }
-  }).then(function(body) {
-    let $ = cheerio.load(body.mainContent);
-    let titleDiv = findElementByText($('div'), "THIS WEEK'S PIZZA");
-    let pizzasDiv = titleDiv.next().next();
-
-    let pizzas = [];
-    let el = pizzasDiv.children().children().first();
-    for (let i = 0; i < pizzasDiv.children().children().length; i++) {
-      let pizzaDate = new Date(el.text());
-      if (!isNaN(pizzaDate)) {
-        el = el.next();
-        i++;
-        let toppings = el.text();
-        pizzas.push({date: pizzaDate, toppings: toppings});
-      }
-      el = el.next();
-    }
-    return pizzas;
-  });
+const ARIZMENDI_API = "https://api.apify.com/v2/actor-tasks/dmRyLwsXpREsMLDAH/runs/last/dataset/items?token=j7sKPdBY8XTrXnbKYXbHbiwbS";
+function getPizzas() {
+  return request(ARIZMENDI_API)
 }
 
 exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
