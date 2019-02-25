@@ -111,7 +111,23 @@ app.post('*', function(request, response) {
     });
   }
 
+  function pizzaToday(agent) {
+    return getPizzas().then(function(pizzaSchedule) {
+      let today = dateString(new Date());
+      let pizzaOfTheDay;
+      pizzaSchedule.forEach(function(pizza) {
+        if (pizza.date.includes(today)) { pizzaOfTheDay = pizza };
+      });
+      if (pizzaOfTheDay) {
+        agent.add("Today's pizza is " + pizzaOfTheDay.toppings);
+      } else {
+        agent.add("No pizza today, want to know about another day?");
+      }
+    });
+  }
+
   let intentMap = new Map();
+  intentMap.set('Default Welcome Intent', pizzaToday);
   intentMap.set('pizza-schedule', pizzaSchedule);
   intentMap.set('Find pizza with topping', getPizzasWithToppings);
   agent.handleRequest(intentMap);
