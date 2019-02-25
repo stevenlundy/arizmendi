@@ -2,6 +2,9 @@
 // for Dialogflow fulfillment library docs, samples, and to report issues
 'use strict';
 
+const express = require('express')
+const app = express()
+var bodyParser = require('body-parser')
 const {WebhookClient} = require('dialogflow-fulfillment');
 const {Card, Suggestion} = require('dialogflow-fulfillment');
 const request = require('request-promise-native');
@@ -16,10 +19,12 @@ function sameDay(d1, d2) {
 
 const ARIZMENDI_API = "https://api.apify.com/v2/actor-tasks/dmRyLwsXpREsMLDAH/runs/last/dataset/items?token=j7sKPdBY8XTrXnbKYXbHbiwbS";
 function getPizzas() {
-  return request(ARIZMENDI_API);
+  return request(ARIZMENDI_API).then((body) => JSON.parse(body));
 }
 
-module.exports = function(request, response) {
+app.use(bodyParser.json())
+
+app.post('*', function(request, response) {
   const agent = new WebhookClient({ request, response });
   console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
   console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
@@ -33,8 +38,9 @@ module.exports = function(request, response) {
       }
       let dateOfInterest = new Date(agent.parameters.date);
       for (let i = 0; i < pizzaSchedule.length; i++) {
-        if (sameDay(pizzaSchedule.date == dateOfInterest)) {
-          agent.add("The pizza on " + dateOfInterest.toDateString() + " will have " + pizzaSchedule.toppings);
+        let pizzaDate = new Date(pizzaSchedule[i].date)
+        if (sameDay(pizzaDate, dateOfInterest)) {
+          agent.add("The pizza on " + dateOfInterest.toDateString() + " will have " + pizzaSchedule[i].toppings);
           console.log("found a pizza");
           return;
         }
@@ -51,4 +57,16 @@ module.exports = function(request, response) {
   let intentMap = new Map();
   intentMap.set('pizza-schedule', pizzaSchedule);
   agent.handleRequest(intentMap);
-};
+});
+
+app.get('*', function(request, response) {
+  getPizzas().then(function(pizzaSchedule) {
+    response.send(pizzaSchedule);
+  });
+});
+
+if (require.main === module) {
+  app.listen(3000);
+} else {
+  module.exports = app;
+}
