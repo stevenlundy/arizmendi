@@ -2,7 +2,6 @@
 // for Dialogflow fulfillment library docs, samples, and to report issues
 'use strict';
 
-const functions = require('firebase-functions');
 const {WebhookClient} = require('dialogflow-fulfillment');
 const {Card, Suggestion} = require('dialogflow-fulfillment');
 const request = require('request-promise-native');
@@ -17,10 +16,10 @@ function sameDay(d1, d2) {
 
 const ARIZMENDI_API = "https://api.apify.com/v2/actor-tasks/dmRyLwsXpREsMLDAH/runs/last/dataset/items?token=j7sKPdBY8XTrXnbKYXbHbiwbS";
 function getPizzas() {
-  return request(ARIZMENDI_API)
+  return request(ARIZMENDI_API);
 }
 
-exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
+module.exports = function(request, response) {
   const agent = new WebhookClient({ request, response });
   console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
   console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
@@ -44,6 +43,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
       agent.add("I couldn't find a pizza for that date");
     }).catch(function(err) {
       console.log(err);
+      console.log('Something went wrong');
       agent.add('Something went wrong!');
     });
   }
@@ -51,4 +51,4 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   let intentMap = new Map();
   intentMap.set('pizza-schedule', pizzaSchedule);
   agent.handleRequest(intentMap);
-});
+};
