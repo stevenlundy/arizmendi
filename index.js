@@ -21,7 +21,7 @@ function dateString(date) {
   return date.toISOString().substring(0,10);
 }
 
-const ARIZMENDI_API = "https://api.apify.com/v2/actor-tasks/dmRyLwsXpREsMLDAH/runs/last/dataset/items?token=j7sKPdBY8XTrXnbKYXbHbiwbS";
+const ARIZMENDI_API = "https://api.apify.com/v2/actor-tasks/64x34o6KFJTPS8sBp/runs/last/dataset/items?token=j7sKPdBY8XTrXnbKYXbHbiwbS&status=SUCCEEDED";
 function getPizzas() {
   return request(ARIZMENDI_API).then((body) => JSON.parse(body));
 }
